@@ -42,7 +42,6 @@ database_default = {
     ],
     "Carne Rossa": ["Tagliata di manzo con rucola", "Polpette al sugo"
                    ],
-    "primi piatti": ["gnocchi al pesto", "risotto", "gnocchi alla romana"]
 }
 
 
@@ -74,7 +73,6 @@ frequenze_target = {
     "Uova": 2,
     "Formaggi": 2,
     "Carne Rossa": 1,
-    "primi piatti": 5,
 }
 
 st.title("🥗 Generatore Menù Settimanale (Linee Guida OMS)")
