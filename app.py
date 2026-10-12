@@ -40,7 +40,9 @@ database_default = {
         "Ricotta fresca con spinaci",
         "Insalata con feta e cetrioli",
     ],
-    "Carne Rossa": ["Tagliata di manzo con rucola", "Polpette al sugo"],
+    "Carne Rossa": ["Tagliata di manzo con rucola", "Polpette al sugo"
+                   ],
+    "primi piatti": ["gnocchi al pesto", "risotto", "gnocchi alla romana"]
 }
 
 
