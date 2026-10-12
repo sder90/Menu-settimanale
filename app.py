@@ -104,27 +104,33 @@ with st.sidebar.form("form_aggiungi_piatto"):
     else:
       st.sidebar.warning("Questo piatto esiste già in questa categoria.")
 
-# Rimuovi piatto esistente
-with st.sidebar.form("form_rimuovi_piatto"):
-  st.subheader("Rimuovi un piatto")
-  cat_rimuovi = st.selectbox(
-      "Categoria da cui eliminare",
-      list(st.session_state.database_piatti.keys()),
-      key="cat_rim",
+# --- Rimuovi piatto esistente (Senza form per aggiornamento in tempo reale) ---
+st.sidebar.subheader("Rimuovi un piatto")
+
+# 1. Seleziona la categoria
+cat_rimuovi = st.sidebar.selectbox(
+    "Categoria da cui eliminare",
+    list(st.session_state.database_piatti.keys()),
+    key="cat_rim",
+)
+
+# 2. Preleva i piatti aggiornati di quella categoria
+piatti_disponibili = st.session_state.database_piatti[cat_rimuovi]
+
+if piatti_disponibili:
+  # 3. Seleziona il piatto da eliminare
+  piatto_da_rimuovere = st.sidebar.selectbox(
+      "Seleziona piatto", piatti_disponibili, key="piatto_rim"
   )
-  piatti_disponibili = st.session_state.database_piatti[cat_rimuovi]
 
-  if piatti_disponibili:
-    piatto_da_rimuovere = st.selectbox("Seleziona piatto", piatti_disponibili)
-    submit_rimuovi = st.form_submit_button("Elimina Piatto")
-
-    if submit_rimuovi:
-      st.session_state.database_piatti[cat_rimuovi].remove(piatto_da_rimuovere)
-      salva_database(st.session_state.database_piatti)  # Aggiornamento su file
-      st.sidebar.success(f"Piatto '{piatto_da_rimuovere}' rimosso!")
-  else:
-    st.sidebar.text("Nessun piatto in questa categoria.")
-    submit_rimuovi = st.form_submit_button("Elimina Piatto", disabled=True)
+  # 4. Pulsante diretto per eliminare (senza form)
+  if st.sidebar.button("Elimina Piatto Selezionato", key="btn_elimina"):
+    st.session_state.database_piatti[cat_rimuovi].remove(piatto_da_rimuovere)
+    salva_database(st.session_state.database_piatti)  # Aggiornamento su file
+    st.sidebar.success(f"Piatto '{piatto_da_rimuovere}' rimosso!")
+    st.rerun()  # Ricarica immediatamente la pagina per aggiornare le liste
+else:
+  st.sidebar.text("Nessun piatto in questa categoria.")
 
 # Mostra i piatti attuali divisi per categoria nella sidebar
 with st.sidebar.expander("Visualizza piatti esistenti"):
