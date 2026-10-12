@@ -74,6 +74,7 @@ frequenze_target = {
     "Uova": 2,
     "Formaggi": 2,
     "Carne Rossa": 1,
+    "primi piatti": 5,
 }
 
 st.title("🥗 Generatore Menù Settimanale (Linee Guida OMS)")
