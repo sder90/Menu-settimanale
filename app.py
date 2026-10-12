@@ -1,3 +1,5 @@
+import json
+import os
 import random
 import streamlit as st
 
@@ -6,38 +8,61 @@ st.set_page_config(
     page_title="Generatore Menù Settimanale", page_icon="🥗", layout="wide"
 )
 
-# 1. Inizializzazione dello State (database dei piatti di default)
+# Nome del file in cui salveremo i piatti permanentemente
+DB_FILE = "piatti_db.json"
+
+# Database di default iniziale
+database_default = {
+    "Legumi": [
+        "Pasta e ceci",
+        "Zuppa di lenticchie",
+        "Insalata di fagioli e farro",
+        "Burger di lenticchie con contorno",
+    ],
+    "Pesce": [
+        "Salmone al forno con patate",
+        "Merluzzo al vapore con bieta",
+        "Spaghetti alle vongole",
+        "Trancio di pesce spada alla griglia",
+    ],
+    "Carne Bianca": [
+        "Petto di pollo ai ferri con insalata",
+        "Tacchino al limone",
+        "Coniglio al forno con rosmarino",
+    ],
+    "Uova": [
+        "Frittata alle zucchine",
+        "Uova strapazzate con pomodori",
+        "Uova sode con verdure grigliate",
+    ],
+    "Formaggi": [
+        "Caprese con mozzarella fior di latte",
+        "Ricotta fresca con spinaci",
+        "Insalata con feta e cetrioli",
+    ],
+    "Carne Rossa": ["Tagliata di manzo con rucola", "Polpette al sugo"],
+}
+
+
+# Funzioni per caricare e salvare il database su file JSON
+def carica_database():
+  if os.path.exists(DB_FILE):
+    try:
+      with open(DB_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+    except:
+      return database_default
+  return database_default
+
+
+def salva_database(db):
+  with open(DB_FILE, "w", encoding="utf-8") as f:
+    json.dump(db, f, ensure_ascii=False, indent=4)
+
+
+# Inizializzazione dello State con il database persistente
 if "database_piatti" not in st.session_state:
-  st.session_state.database_piatti = {
-      "Legumi": [
-          "Pasta e ceci",
-          "Zuppa di lenticchie",
-          "Insalata di fagioli e farro",
-          "Burger di lenticchie con contorno",
-      ],
-      "Pesce": [
-          "Salmone al forno con patate",
-          "Merluzzo al vapore con bieta",
-          "Spaghetti alle vongole",
-          "Trancio di pesce spada alla griglia",
-      ],
-      "Carne Bianca": [
-          "Petto di pollo ai ferri con insalata",
-          "Tacchino al limone",
-          "Coniglio al forno con rosmarino",
-      ],
-      "Uova": [
-          "Frittata alle zucchine",
-          "Uova strapazzate con pomodori",
-          "Uova sode con verdure grigliate",
-      ],
-      "Formaggi": [
-          "Caprese con mozzarella fior di latte",
-          "Ricotta fresca con spinaci",
-          "Insalata con feta e cetrioli",
-      ],
-      "Carne Rossa": ["Tagliata di manzo con rucola", "Polpette al sugo"],
-  }
+  st.session_state.database_piatti = carica_database()
 
 # Target di frequenza settimanale OMS (14 pasti totali)
 frequenze_target = {
@@ -51,8 +76,8 @@ frequenze_target = {
 
 st.title("🥗 Generatore Menù Settimanale (Linee Guida OMS)")
 st.write(
-    "Gestisci i tuoi piatti preferiti e genera un menù bilanciato per tutta la"
-    " settimana con un solo clic!"
+    "Gestisci i tuoi piatti preferiti: le modifiche verranno salvate in modo"
+    " permanente!"
 )
 
 # --- SIDEBAR: GESTIONE PIATTI ---
@@ -68,13 +93,38 @@ with st.sidebar.form("form_aggiungi_piatto"):
   submit_aggiungi = st.form_submit_button("Aggiungi al Database")
 
   if submit_aggiungi and nuovo_piatto.strip():
-    if nuovo_piatto not in st.session_state.database_piatti[categoria_scelta]:
-      st.session_state.database_piatti[categoria_scelta].append(
-          nuovo_piatto.strip()
-      )
-      st.sidebar.success(f"Piatto '{nuovo_piatto}' aggiunto con successo!")
+    piatto_pulito = nuovo_piatto.strip()
+    if (
+        piatto_pulito
+        not in st.session_state.database_piatti[categoria_scelta]
+    ):
+      st.session_state.database_piatti[categoria_scelta].append(piatto_pulito)
+      salva_database(st.session_state.database_piatti)  # Salvataggio su file
+      st.sidebar.success(f"Piatto '{piatto_pulito}' aggiunto e salvato!")
     else:
       st.sidebar.warning("Questo piatto esiste già in questa categoria.")
+
+# Rimuovi piatto esistente
+with st.sidebar.form("form_rimuovi_piatto"):
+  st.subheader("Rimuovi un piatto")
+  cat_rimuovi = st.selectbox(
+      "Categoria da cui eliminare",
+      list(st.session_state.database_piatti.keys()),
+      key="cat_rim",
+  )
+  piatti_disponibili = st.session_state.database_piatti[cat_rimuovi]
+
+  if piatti_disponibili:
+    piatto_da_rimuovere = st.selectbox("Seleziona piatto", piatti_disponibili)
+    submit_rimuovi = st.form_submit_button("Elimina Piatto")
+
+    if submit_rimuovi:
+      st.session_state.database_piatti[cat_rimuovi].remove(piatto_da_rimuovere)
+      salva_database(st.session_state.database_piatti)  # Aggiornamento su file
+      st.sidebar.success(f"Piatto '{piatto_da_rimuovere}' rimosso!")
+  else:
+    st.sidebar.text("Nessun piatto in questa categoria.")
+    submit_rimuovi = st.form_submit_button("Elimina Piatto", disabled=True)
 
 # Mostra i piatti attuali divisi per categoria nella sidebar
 with st.sidebar.expander("Visualizza piatti esistenti"):
@@ -92,7 +142,6 @@ if st.button(
     type="primary",
     use_container_width=True,
 ):
-  # Controllo preliminare: verifica che ogni categoria abbia almeno un piatto
   categorie_vuote = [
       cat for cat, piatti in st.session_state.database_piatti.items() if not piatti
   ]
@@ -103,7 +152,6 @@ if st.button(
         " procedere."
     )
   else:
-    # Crea il pool di categorie per i 14 pasti
     pool_categorie = []
     for cat, freq in frequenze_target.items():
       pool_categorie.extend([cat] * freq)
@@ -144,7 +192,6 @@ if "menu_corrente" in st.session_state:
   giorni = list(st.session_state.menu_corrente.keys())
   col1, col2 = st.columns(2)
 
-  # Dividiamo i giorni in due colonne per una visualizzazione pulita
   for idx, giorno in enumerate(giorni):
     container = col1 if idx < 4 else col2
     with container:
@@ -161,5 +208,4 @@ else:
   st.info(
       "Clicca sul pulsante qui sopra per generare il tuo primo menù settimanale"
       " basato sulle tue preferenze e sulle frequenze OMS!"
-      )
-  
+  )
